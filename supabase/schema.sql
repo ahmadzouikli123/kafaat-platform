@@ -43,6 +43,7 @@ create table if not exists public.expert_profiles (
   user_id uuid references public.profiles(id) on delete cascade,
   name text not null,
   title text not null,
+  email text,
   country text not null,
   city text,
   field text not null,
@@ -69,7 +70,14 @@ create policy "anyone can submit an expert profile"
 
 create policy "users can update their own expert profile"
   on public.expert_profiles for update
-  using (auth.uid() = user_id);
+  using (
+    auth.uid() = user_id
+    or (user_id is null and email = auth.jwt() ->> 'email')
+  )
+  with check (
+    auth.uid() = user_id
+    or (user_id is null and email = auth.jwt() ->> 'email')
+  );
 
 -- ---------------------------------------------------------
 -- 3) projects — مشاريع واستشارات

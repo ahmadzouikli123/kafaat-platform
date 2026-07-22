@@ -1,5 +1,7 @@
 'use client';
 
+import AuthStatus from './AuthStatus';
+
 export default function Header({ onContactClick }) {
   return (
     <header className="standalone-header">
@@ -23,7 +25,7 @@ export default function Header({ onContactClick }) {
           <div className="t2">Syrian Talents Abroad Platform</div>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <button
           className="btn btn-outline btn-sm"
           onClick={onContactClick}
@@ -31,6 +33,7 @@ export default function Header({ onContactClick }) {
         >
           <i className="fas fa-envelope" /> تواصل معنا
         </button>
+        <AuthStatus />
       </div>
     </header>
   );

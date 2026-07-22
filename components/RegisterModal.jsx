@@ -46,9 +46,15 @@ export default function RegisterModal({ open, onClose, onRegistered }) {
 
     setSubmitting(true);
     const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { error } = await supabase.from('expert_profiles').insert({
+      user_id: user?.id || null,
       name: form.fullName,
       title: form.title,
+      email: form.email,
       country: form.country,
       city: form.city,
       field: form.field,
@@ -86,6 +92,11 @@ export default function RegisterModal({ open, onClose, onRegistered }) {
           </button>
         </div>
         <div className="modal-body">
+          <p style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.7 }}>
+            <i className="fas fa-info-circle" style={{ marginleft: 4 }} />
+            إذا كنت مسجّلاً دخولك، سيُربط هذا الملف بحسابك تلقائياً لتتمكن من تعديله لاحقاً من{' '}
+            <a href="/dashboard" style={{ color: 'var(--green)' }}>لوحتي</a>.
+          </p>
           <form onSubmit={(e) => e.preventDefault()}>
             <div className="form-row">
               <div className="form-group">
