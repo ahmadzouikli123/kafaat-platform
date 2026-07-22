@@ -1,25 +1,28 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/Toast';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const showToast = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     if (searchParams.get('error')) {
-      showToast('انتهت صلاحية الرابط', 'رابط الدخول غير صالح أو منتهي، أرسل رابطاً جديداً', 'error');
+      showToast('انتهت صلاحية الرابط', 'الرابط غير صالح أو منتهي — أدخل الرمز المرسل إلى بريدك بدلاً منه', 'error');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleSubmit(e) {
+  async function handleSendCode(e) {
     e.preventDefault();
     if (!email) {
       showToast('خطأ', 'الرجاء إدخال بريدك الإلكتروني', 'error');
@@ -36,10 +39,36 @@ function LoginForm() {
     setSubmitting(false);
 
     if (error) {
-      showToast('خطأ', 'تعذر إرسال رابط الدخول، حاول مجدداً', 'error');
+      showToast('خطأ', error.message || 'تعذر إرسال رمز الدخول، حاول مجدداً', 'error');
+      console.error('signInWithOtp error:', error);
       return;
     }
     setSent(true);
+  }
+
+  async function handleVerifyCode(e) {
+    e.preventDefault();
+    if (!code || code.length < 6) {
+      showToast('خطأ', 'أدخل الرمز المكوّن من 6 أرقام كاملاً', 'error');
+      return;
+    }
+    setVerifying(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+    setVerifying(false);
+
+    if (error) {
+      showToast('خطأ', error.message || 'الرمز غير صحيح أو منتهي الصلاحية', 'error');
+      console.error('verifyOtp error:', error);
+      return;
+    }
+    showToast('تم', 'تم تسجيل الدخول بنجاح', 'success');
+    router.push('/dashboard');
+    router.refresh();
   }
 
   return (
@@ -53,16 +82,47 @@ function LoginForm() {
         </div>
         <div className="modal-body">
           {sent ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <i className="fas fa-envelope-open-text" style={{ fontSize: 40, color: 'var(--green)', marginBottom: 16 }} />
-              <p style={{ fontSize: 13.5, lineHeight: 1.8 }}>
-                أرسلنا رابط دخول إلى <strong>{email}</strong>.
-                <br />
-                افتح بريدك واضغط على الرابط لتسجيل الدخول — لا حاجة لكلمة مرور.
-              </p>
-            </div>
+            <>
+              <div style={{ textAlign: 'center', padding: '10px 0 20px' }}>
+                <i className="fas fa-envelope-open-text" style={{ fontSize: 36, color: 'var(--green)', marginBottom: 12 }} />
+                <p style={{ fontSize: 13, lineHeight: 1.8 }}>
+                  أرسلنا رسالة إلى <strong>{email}</strong>.
+                  <br />
+                  أدخل الرمز المكوّن من 6 أرقام الموجود في الرسالة (أسرع وأضمن من الضغط على الرابط):
+                </p>
+              </div>
+              <form onSubmit={handleVerifyCode}>
+                <div className="form-group">
+                  <label>رمز التحقق</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="------"
+                    style={{ textAlign: 'center', fontSize: 22, letterSpacing: 8 }}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-green w-full" disabled={verifying}>
+                  <i className="fas fa-check" /> {verifying ? 'جارٍ التحقق...' : 'تحقق ودخول'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost w-full"
+                  style={{ marginTop: 8 }}
+                  onClick={() => {
+                    setSent(false);
+                    setCode('');
+                  }}
+                >
+                  إرسال رمز جديد
+                </button>
+              </form>
+            </>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSendCode}>
               <div className="form-group">
                 <label>البريد الإلكتروني</label>
                 <input
@@ -74,10 +134,10 @@ function LoginForm() {
                 />
               </div>
               <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: -6, marginBottom: 16 }}>
-                سنرسل لك رابط دخول آمن — بدون الحاجة لتذكّر كلمة مرور.
+                سنرسل لك رسالة تحتوي رمز دخول من 6 أرقام — بدون الحاجة لتذكّر كلمة مرور.
               </p>
               <button type="submit" className="btn btn-green w-full" disabled={submitting}>
-                <i className="fas fa-paper-plane" /> {submitting ? 'جارٍ الإرسال...' : 'إرسال رابط الدخول'}
+                <i className="fas fa-paper-plane" /> {submitting ? 'جارٍ الإرسال...' : 'إرسال رمز الدخول'}
               </button>
             </form>
           )}
