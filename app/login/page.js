@@ -48,8 +48,8 @@ function LoginForm() {
 
   async function handleVerifyCode(e) {
     e.preventDefault();
-    if (!code || code.length < 6) {
-      showToast('خطأ', 'أدخل الرمز المكوّن من 6 أرقام كاملاً', 'error');
+    if (!code || code.length < 6 || code.length > 10) {
+      showToast('خطأ', 'أدخل رمز التحقق كاملاً كما ورد في الرسالة', 'error');
       return;
     }
     setVerifying(true);
@@ -88,7 +88,7 @@ function LoginForm() {
                 <p style={{ fontSize: 13, lineHeight: 1.8 }}>
                   أرسلنا رسالة إلى <strong>{email}</strong>.
                   <br />
-                  أدخل الرمز المكوّن من 6 أرقام الموجود في الرسالة (أسرع وأضمن من الضغط على الرابط):
+                  أدخل رمز التحقق الموجود في الرسالة (أسرع وأضمن من الضغط على الرابط):
                 </p>
               </div>
               <form onSubmit={handleVerifyCode}>
@@ -97,10 +97,10 @@ function LoginForm() {
                   <input
                     type="text"
                     inputMode="numeric"
-                    maxLength={6}
+                    maxLength={10}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="------"
+                    placeholder="رمز التحقق"
                     style={{ textAlign: 'center', fontSize: 22, letterSpacing: 8 }}
                     required
                   />
@@ -134,7 +134,7 @@ function LoginForm() {
                 />
               </div>
               <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: -6, marginBottom: 16 }}>
-                سنرسل لك رسالة تحتوي رمز دخول من 6 أرقام — بدون الحاجة لتذكّر كلمة مرور.
+                سنرسل لك رسالة تحتوي رمز دخول — بدون الحاجة لتذكّر كلمة مرور.
               </p>
               <button type="submit" className="btn btn-green w-full" disabled={submitting}>
                 <i className="fas fa-paper-plane" /> {submitting ? 'جارٍ الإرسال...' : 'إرسال رمز الدخول'}
